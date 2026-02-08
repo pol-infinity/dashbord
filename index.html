@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>POL INFINITY | Professional Command Center</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-canvas: #06070d;
+            --accent-pol: #7B3FE4; 
+            --accent-cyan: #00f2ff;
+            --accent-purple: #9d50bb;
+            --glass: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(123, 63, 228, 0.2);
+            --success-glow: rgba(0, 255, 136, 0.2);
+        }
+
+        html, body {
+            overflow-x: hidden !important;
+            width: 100%;
+            position: relative;
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(123, 63, 228, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 242, 255, 0.08) 0px, transparent 50%);
+            min-height: 100vh;
+        }
+
+        .bg-orb {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.3;
+            animation: float 20s infinite alternate;
+        }
+        .orb-1 { background: var(--accent-pol); top: -10%; left: -5%; }
+        .orb-2 { background: var(--accent-purple); bottom: -10%; right: -5%; animation-delay: -5s; }
+
+        @keyframes float {
+            from { transform: translate(0, 0); }
+            to { transform: translate(30px, 60px); }
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-pol); border-radius: 10px; }
+
+        .navbar-cinematic {
+            background: rgba(6, 7, 13, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 10px 0;
+        }
+        .logo-breathe {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, #ffffff, var(--accent-pol));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: breathe 3s infinite ease-in-out;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 5px var(--accent-pol)); }
+            50% { transform: scale(1.1); filter: brightness(1.3) drop-shadow(0 0 15px var(--accent-pol)); }
+        }
+
+        .btn-telegram {
+            background: rgba(0, 136, 204, 0.1);
+            border: 1px solid #0088cc;
+            color: #0088cc;
+            border-radius: 50px;
+            padding: 6px 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+
+        .btn-connect {
+            background: linear-gradient(90deg, var(--accent-pol), var(--accent-purple));
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            border-radius: 10px;
+            padding: 7px 15px;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+        .btn-connect.connected {
+            background: rgba(255, 255, 255, 0.1) !important;
+            color: var(--accent-cyan) !important;
+            border: 1px solid var(--accent-cyan) !important;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 15px;
+            height: 100%;
+            transition: 0.3s;
+            word-wrap: break-word;
+        }
+
+        .card-label { font-size: 0.6rem; color: #a0a5b1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 700; }
+        .card-value { font-size: 1.2rem; font-weight: 800; }
+        .pol-glow { color: var(--accent-pol); text-shadow: 0 0 10px rgba(123, 63, 228, 0.4); }
+        .earning-ticker { font-family: 'Monaco', monospace; color: #00ff88; }
+
+        .level-row { background: rgba(123, 63, 228, 0.05); padding: 8px; border-radius: 10px; margin-bottom: 6px; border: 1px solid rgba(123, 63, 228, 0.1); font-size: 0.75rem; }
+        .level-badge { background: var(--accent-pol); color: #fff; font-weight: 800; padding: 2px 5px; border-radius: 4px; font-size: 0.6rem; }
+
+        .btn-action {
+            background: linear-gradient(90deg, var(--accent-pol), var(--accent-purple));
+            border: none;
+            color: #fff;
+            border-radius: 10px;
+            font-weight: 700;
+            padding: 12px;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        .table-glass { color: #fff; margin-bottom: 0; min-width: 450px; }
+        .table-glass thead th { border-bottom: 1px solid var(--glass-border); color: #8a8f98; font-size: 0.65rem; text-transform: uppercase; padding: 12px; }
+        .table-glass tbody td { border-bottom: 1px solid rgba(255,255,255,0.02); padding: 12px; font-size: 0.8rem; }
+        
+        #refLink { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; display: inline-block; vertical-align: middle; }
+
+        .fomo-pulse { animation: pulse-green 2s infinite; }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+        }
+
+        /* COMPACT PROFESSIONAL STATUS BAR */
+        .status-bar-slim {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 100px;
+            padding: 8px 20px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        /* NEW: UPLINE DISPLAY STYLE */
+        .upline-display {
+            background: rgba(123, 63, 228, 0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 12px;
+            font-size: 0.7rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* CALCULATOR SPECIFIC STYLE */
+        .calc-res-box {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .calc-val { color: var(--accent-cyan); font-weight: 700; font-family: 'Monaco', monospace; }
+
+        @media (max-width: 768px) {
+            .container { padding-left: 15px; padding-right: 15px; }
+            .card-value { font-size: 1.1rem; }
+            #refLink { max-width: 120px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <nav class="navbar-cinematic sticky-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-infinity logo-breathe"></i>
+                <span class="ms-2 fw-bold d-none d-sm-block" style="letter-spacing: 1px; font-size: 0.9rem;">POL INFINITY</span>
+            </div>
+            <a href="https://t.me/polinfinity" target="_blank" class="btn-telegram d-none d-md-block">
+                <i class="fa-brands fa-telegram me-1"></i>Telegram
+            </a>
+            <div class="d-flex align-items-center gap-2">
+                <div class="text-end d-none d-sm-block">
+                    <p class="card-label mb-0">Balance</p>
+                    <span id="walletBalance" class="small fw-bold pol-glow">-- POL</span>
+                </div>
+                <button id="connect-btn" class="btn-connect">Connect Wallet</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        
+        <div class="status-bar-slim">
+            <div class="status-pill text-white">
+                <i class="fa-solid fa-shield-halved text-info" style="font-size: 0.8rem;"></i>
+                DAILY <span class="text-info">5% RETURNS</span> PROTOCOL
+            </div>
+            <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
+            <div class="status-pill text-success">
+                <i class="fa-solid fa-circle-check" style="font-size: 0.6rem;"></i>
+                ACTIVE
+            </div>
+        </div>
+
+        <h6 class="mb-3 card-label text-info">Your Personal Statistics</h6>
+        <div class="row g-2 mb-4">
+            <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Active Stake</p><div id="userTotalStaked" class="card-value pol-glow">0.00</div></div></div>
+            <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Personal Payouts</p><div id="userWithdrawn" class="card-value text-danger">0.00</div></div></div>
+            <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Direct Referrals</p><div id="directReferrals" class="card-value">0</div></div></div>
+            <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Team Count</p><div id="totalTeam" class="card-value">0</div></div></div>
+        </div>
+
+        <h6 class="mb-3 card-label text-warning">Profit Calculator</h6>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="glass-card" style="border: 1px solid rgba(255, 193, 7, 0.2);">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="card-label">Enter Amount (POL)</label>
+                            <input type="number" id="calcInput" class="form-control bg-dark border-secondary text-white mb-3" placeholder="Ex: 1000" oninput="calculateEarnings()">
+                            <p class="small text-secondary" style="font-size: 0.65rem;">Calculated based on 5% Daily Return Plan</p>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row g-2">
+                                <div class="col-6 col-sm-3">
+                                    <div class="calc-res-box text-center">
+                                        <p class="card-label mb-1">Daily (5%)</p>
+                                        <span id="resDaily" class="calc-val">0.00</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="calc-res-box text-center">
+                                        <p class="card-label mb-1">Weekly (35%)</p>
+                                        <span id="resWeekly" class="calc-val">0.00</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="calc-res-box text-center">
+                                        <p class="card-label mb-1">Monthly (150%)</p>
+                                        <span id="resMonthly" class="calc-val">0.00</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-sm-3">
+                                    <div class="calc-res-box text-center">
+                                        <p class="card-label mb-1">Yearly (1825%)</p>
+                                        <span id="resYearly" class="calc-val">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="mb-3 card-label text-secondary">Global Platform Metrics</h6>
+        <div class="row g-2 mb-4">
+            <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Total Staked</p><div id="totalStaked" class="card-value pol-glow">---</div></div></div>
+            <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Ref Bonus Paid</p><div id="totalRefBonusGlobal" class="card-value">---</div></div></div>
+            <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Total Users</p><div id="totalUsers" class="card-value">---</div></div></div>
+            <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Platform Withdraws</p><div id="totalPlatformWithdrawn" class="card-value">---</div></div></div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="glass-card">
+                            <h6 class="mb-3 fw-bold small">STAKE ASSETS</h6>
+                            
+                            <div class="upline-display">
+                                <span class="text-secondary">Upliner:</span>
+                                <span id="uplineAddressDisplay" class="text-info fw-bold">None</span>
+                            </div>
+
+                            <p class="text-secondary mb-2" style="font-size: 0.7rem;">Min: 10 POL | Max: Unlimited</p>
+                            <input type="number" id="investAmount" class="form-control bg-dark border-secondary text-white mb-3" placeholder="Amount">
+                            <button id="investBtn" class="btn btn-action">STAKE</button>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="glass-card fomo-pulse">
+                            <h6 class="mb-3 fw-bold small d-flex justify-content-between">
+                                WITHDRAWABLE 
+                                <span class="badge bg-success" style="font-size: 0.5rem;">HOLD BONUS +1%</span>
+                            </h6>
+                            <div id="userAvailable" class="card-value earning-ticker mb-3">0.000000</div>
+                            <button id="withdrawBtn" class="btn btn-action" style="background: linear-gradient(90deg, #11998e, #38ef7d);">WITHDRAW</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <h6 class="mb-3 card-label text-secondary">Rewards</h6>
+                <div class="glass-card">
+                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1">L1</span> 6%</span><span id="lvl1Bonus">0 POL</span></div>
+                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#9d50bb">L2</span> 3%</span><span id="lvl2Bonus">0 POL</span></div>
+                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#6a11cb">L3</span> 1%</span><span id="lvl3Bonus">0 POL</span></div>
+                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#4a00e0">L4</span> 1%</span><span id="lvl4Bonus">0 POL</span></div>
+                    
+                    <div class="p-2 mt-2 rounded bg-dark bg-opacity-50 border border-secondary border-opacity-20">
+                        <p class="card-label mb-1" style="font-size: 0.5rem;">Referral Link</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                             <div id="refLink" class="small text-secondary">Connect wallet...</div>
+                             <i class="fa-solid fa-copy" style="cursor:pointer; color: var(--accent-pol);" onclick="copyRef()"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="glass-card">
+                    <h6 class="mb-3 fw-bold small text-cyan"><i class="fa-solid fa-layer-group me-2"></i>MY ACTIVE STAKES</h6>
+                    <div class="table-responsive">
+                        <table class="table table-glass">
+                            <thead><tr><th>Plan</th><th>Amount</th><th>Daily %</th><th>Est. Return</th><th>Ends In</th></tr></thead>
+                            <tbody id="activeStakesBody">
+                                <tr><td colspan="5" class="text-center text-muted small py-4">No active stakes found. Stake now to start earning.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-lg-7">
+                <div class="glass-card">
+                    <h6 class="mb-3 fw-bold small">TRANSACTION HISTORY</h6>
+                    <div class="table-responsive">
+                        <table class="table table-glass">
+                            <thead><tr><th>Type</th><th>Amount</th><th>Date</th><th>Tx</th></tr></thead>
+                            <tbody id="txHistoryBody">
+                                <tr><td colspan="4" class="text-center text-muted small py-4">Connect wallet to load history</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-5">
+                <div class="glass-card">
+                    <h6 class="mb-3 fw-bold small">TOP REFERRERS</h6>
+                    <div class="table-responsive">
+                        <table class="table table-glass">
+                            <thead><tr><th>Rank</th><th>Address</th><th>Bonus</th></tr></thead>
+                            <tbody id="leaderboardBody">
+                                <tr><td colspan="3" class="text-center text-muted small py-4">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-5 py-4 text-center">
+            <a href="https://t.me/polinfinity" target="_blank" class="btn btn-telegram mb-3">
+                <i class="fa-brands fa-telegram me-2"></i>Join Official Telegram
+            </a>
+            <p class="text-secondary" style="font-size: 0.7rem;">© 2026 POL INFINITY · All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script src="app.js"></script>
+    
+    <script>
+        // EARNINGS CALCULATOR LOGIC
+        function calculateEarnings() {
+            const input = document.getElementById('calcInput');
+            const amount = parseFloat(input.value) || 0;
+            
+            // Logic: 5% Daily
+            const daily = amount * 0.05;
+            const weekly = daily * 7;
+            const monthly = daily * 30;
+            const yearly = daily * 365;
+
+            document.getElementById('resDaily').innerText = daily.toFixed(2) + " POL";
+            document.getElementById('resWeekly').innerText = weekly.toFixed(2) + " POL";
+            document.getElementById('resMonthly').innerText = monthly.toFixed(2) + " POL";
+            document.getElementById('resYearly').innerText = yearly.toFixed(2) + " POL";
+        }
+
+        // REFERRAL LINK DETECTION LOGIC
+        function detectReferral() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ref = urlParams.get('ref');
+            const display = document.getElementById('uplineAddressDisplay');
+            
+            if (ref && ethers.utils.isAddress(ref)) {
+                const shortened = ref.slice(0, 6) + "..." + ref.slice(-4);
+                display.innerText = shortened;
+                localStorage.setItem('pol_infinity_ref', ref);
+            } else {
+                const savedRef = localStorage.getItem('pol_infinity_ref');
+                if (savedRef) {
+                    display.innerText = savedRef.slice(0, 6) + "..." + savedRef.slice(-4);
+                } else {
+                    display.innerText = "Default (Admin)";
+                }
+            }
+        }
+        detectReferral();
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({ 
+                    particleCount: 100, 
+                    spread: 60, 
+                    origin: { y: 0.7 }, 
+                    colors: ['#7B3FE4', '#9d50bb', '#00f2ff'] 
+                });
+            }
+        }
+
+        function copyRef() {
+            const link = document.getElementById("refLink").innerText;
+            if(link.includes("Connect")) {
+                Swal.fire({ icon: 'warning', title: 'Connect Wallet First', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+                return;
+            }
+            navigator.clipboard.writeText(link).then(() => {
+                Swal.fire({ icon: 'success', title: 'Link copied!', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+            });
+        }
+    </script>
+</body>
+</html>
