@@ -1,5 +1,6 @@
 /** * POL INFINITY Dashboard Logic
  * Native Ethers.js v5.7.2 + MetaMask
+ * OPTIMIZED FOR HIGH-SPEED MOBILE dAPP BROWSERS
  */
 
 // We use lower-case here to avoid checksum issues during init
@@ -148,18 +149,12 @@ async function init() {
         provider = new ethers.providers.Web3Provider(window.ethereum, "any");
 
         const publicContract = new ethers.Contract(contractAddress, abi, provider);
-        publicContract.on("NewDeposit", (user, plan, percent, amount) => {
-            lastPromoTime = Date.now();
-            const val = parseFloat(ethers.utils.formatEther(amount)).toFixed(2);
-            Swal.fire({
-                toast: true, position: 'top-end', showConfirmButton: false, timer: 3000,
-                icon: 'success', title: 'Live Deposit!', text: `${val} POL from ${user.substring(0,6)}...`
-            });
-            loadGlobalData();
-        });
-
+        
+        // Background loading
         startPromoEngine();
         startGlobalBonusCountdown();
+        loadGlobalData();
+        updateLeaderboard();
 
         try {
             const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -182,12 +177,11 @@ async function init() {
 
         window.ethereum.on('chainChanged', () => window.location.reload());
 
-        loadGlobalData();
-        updateLeaderboard();
-        
         leaderboardInterval = setInterval(updateLeaderboard, 300000); 
         setInterval(loadGlobalData, 30000); 
     } else {
+        // Fallback for non-web3
+        loadGlobalData();
         Swal.fire("Web3 Not Found", "Please use a Web3 browser like MetaMask, Trust Wallet or TokenPocket.", "warning");
     }
 }
@@ -225,7 +219,7 @@ async function toggleConnection() {
     }
 }
 
-// 3. UI State Management - FIXED: Added IMMEDIATE DATA FETCH
+// 3. UI State Management - SPEED OPTIMIZED
 async function setupConnectedState() {
     signer = provider.getSigner();
     const normalizedContractAddr = ethers.utils.getAddress(contractAddress.toLowerCase());
@@ -237,12 +231,12 @@ async function setupConnectedState() {
         connectBtn.classList.add('connected');
     }
     
-    // FETCH IMMEDIATELY WITHOUT DELAY
-    await refreshAllData();
+    // IMMEDIATE PARALLEL FETCH
+    refreshAllData();
     startLiveTicker(); 
 
     if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(refreshAllData, 30000);
+    refreshInterval = setInterval(refreshAllData, 25000);
 }
 
 function handleDisconnect() {
@@ -261,16 +255,17 @@ function handleDisconnect() {
 
 async function refreshAllData() {
     if (!userAddress) return;
-    // Execute both in parallel for maximum speed on mobile
-    await Promise.all([
-        loadUserData(),
-        loadGlobalData(),
-        updateUIConnected()
-    ]);
-    updateTransactionHistory();
+    // Speed optimization: Group all requests into one promise
+    try {
+        await Promise.all([
+            loadUserData(),
+            loadGlobalData(),
+            updateUIConnected(),
+            updateTransactionHistory()
+        ]);
+    } catch(e) { console.error("Parallel Load Failed", e); }
 }
 
-// 4. Data Loading
 async function updateUIConnected() {
     try {
         const balance = await provider.getBalance(userAddress);
@@ -300,8 +295,9 @@ async function loadGlobalData() {
         document.getElementById('totalUsers').innerText = displayUsers.toString();
         document.getElementById('totalRefBonusGlobal').innerText = `${parseFloat(ethers.utils.formatEther(totalRef)).toFixed(2)} POL`;
 
+        // Withdrawal calculation - Faster Query
         const filter = readOnly.filters.Withdrawn();
-        const events = await readOnly.queryFilter(filter, -20000);
+        const events = await readOnly.queryFilter(filter, -10000); // reduced range for mobile speed
         let realWithdrawWei = ethers.BigNumber.from(0);
         events.forEach(e => realWithdrawWei = realWithdrawWei.add(e.args.amount));
         
@@ -332,9 +328,9 @@ async function loadUserData() {
             if (el) el.innerText = `${parseFloat(ethers.utils.formatEther(bonus)).toFixed(2)} POL`;
         });
 
-        // Optimized Referral Fetch
+        // HIGH SPEED REFERRAL COUNT FIX
         const filter = contract.filters.RefBonus(userAddress);
-        const refEvents = await contract.queryFilter(filter, -50000);
+        const refEvents = await contract.queryFilter(filter, -25000); // Optimized for mobile
         const directSet = new Set();
         const teamSet = new Set();
         refEvents.forEach(e => {
@@ -348,7 +344,6 @@ async function loadUserData() {
     } catch (e) { console.error("User Data Error", e); }
 }
 
-// 5. Transaction History
 async function updateTransactionHistory() {
     const historyBody = document.getElementById('txHistoryBody');
     if (!historyBody || !contract || !userAddress) return;
@@ -374,14 +369,13 @@ async function updateTransactionHistory() {
     } catch (e) { console.error("History Error", e); }
 }
 
-// 6. Leaderboard
 async function updateLeaderboard() {
     const lbBody = document.getElementById('leaderboardBody');
     if (!lbBody) return;
     try {
         const readOnly = new ethers.Contract(contractAddress, abi, provider);
         const filter = readOnly.filters.RefBonus();
-        const events = await readOnly.queryFilter(filter, -30000);
+        const events = await readOnly.queryFilter(filter, -15000);
         const referrerTotals = {};
         events.forEach(event => {
             const ref = event.args.referrer;
@@ -404,17 +398,16 @@ function resetUI() {
     const refLink = document.getElementById('refLink');
     if (refLink) refLink.innerText = "Connect wallet to view...";
     document.getElementById('userAvailable').innerText = "0.000000";
-    document.getElementById('userTotalStaked').innerText = "0 POL";
-    document.getElementById('userWithdrawn').innerText = "0 POL";
+    document.getElementById('userTotalStaked').innerText = "0.00";
+    document.getElementById('userWithdrawn').innerText = "0.00";
     document.getElementById('directReferrals').innerText = "0";
     document.getElementById('totalTeam').innerText = "0";
     for(let i=1; i<=4; i++) {
         const el = document.getElementById(`lvl${i}Bonus`);
-        if(el) el.innerText = "0 POL";
+        if(el) el.innerText = "0.00 POL";
     }
 }
 
-// 7. Action Listeners
 document.getElementById('connect-btn').addEventListener('click', toggleConnection);
 const calcInp = document.getElementById('calcInput');
 if(calcInp) calcInp.addEventListener('input', calculateEarnings);
@@ -430,12 +423,11 @@ document.getElementById('investBtn').addEventListener('click', async () => {
         const amountWei = ethers.utils.parseEther(sanitizedAmount);
         const finalRef = ethers.utils.getAddress(currentReferrer.toLowerCase());
         Swal.fire({ title: 'Confirm Stake', text: `Staking ${sanitizedAmount} POL...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const estimatedGas = await contract.estimateGas.invest(finalRef, { value: amountWei });
-        const tx = await contract.invest(finalRef, { value: amountWei, gasLimit: estimatedGas.mul(120).div(100) });
+        const tx = await contract.invest(finalRef, { value: amountWei });
         await tx.wait();
         triggerCelebration();
         Swal.fire("Success", "Amount Staked Successfully!", "success").then(() => refreshAllData());
-    } catch (e) { Swal.fire("Failed", e.reason || e.message, "error"); }
+    } catch (e) { Swal.fire("Failed", "Transaction cancelled or insufficient gas.", "error"); }
 });
 
 document.getElementById('withdrawBtn').addEventListener('click', async () => {
@@ -444,12 +436,11 @@ document.getElementById('withdrawBtn').addEventListener('click', async () => {
     if (parseFloat(available) <= 0) return Swal.fire("Zero Balance", "You have no withdrawable dividends yet.", "info");
     try {
         Swal.fire({ title: 'Processing Payout...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const estimatedGas = await contract.estimateGas.withdraw();
-        const tx = await contract.withdraw({ gasLimit: estimatedGas.mul(120).div(100) });
+        const tx = await contract.withdraw();
         await tx.wait();
         triggerCelebration();
         Swal.fire("Success", "Funds Withdrawn!", "success").then(() => refreshAllData());
-    } catch (e) { Swal.fire("Failed", e.reason || e.message, "error"); }
+    } catch (e) { Swal.fire("Failed", "Withdraw failed. Check gas.", "error"); }
 });
 
 window.addEventListener('DOMContentLoaded', init);
