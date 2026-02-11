@@ -58,7 +58,6 @@ function startLiveTicker() {
     if (tickerInterval) clearInterval(tickerInterval);
     tickerInterval = setInterval(() => {
         if (liveEarningsValue > 0) {
-            // Updated to 5% daily as per instructions
             // 5% daily = 0.00005787% per second
             const increment = liveEarningsValue * (0.05 / 86400); 
             liveEarningsValue += increment;
@@ -97,7 +96,6 @@ function startPromoEngine() {
             const amt = amounts[Math.floor(Math.random() * amounts.length)];
             const action = Math.random() > 0.3 ? "Deposited" : "Withdrew";
             
-            // Notification updated: Removed "System Active" line and added 5% returns highlight
             Swal.fire({
                 toast: true,
                 position: 'bottom-start',
@@ -115,7 +113,6 @@ function startPromoEngine() {
     }, 15000);
 }
 
-// --- Added Confetti Utility ---
 function triggerCelebration() {
     if (typeof confetti === 'function') {
         confetti({
@@ -129,7 +126,6 @@ function triggerCelebration() {
 
 // 1. App Initialization
 async function init() {
-    // --- UPLINER DETECTION LOGIC ---
     const urlParams = new URLSearchParams(window.location.search);
     const ref = urlParams.get('ref');
     const display = document.getElementById('uplineAddressDisplay');
@@ -138,7 +134,6 @@ async function init() {
         currentReferrer = ethers.utils.getAddress(ref.toLowerCase());
         localStorage.setItem('pol_infinity_ref', currentReferrer);
         if(display) display.innerText = currentReferrer.substring(0,6) + "..." + currentReferrer.substring(38);
-        console.log("Referrer captured and saved:", currentReferrer);
     } else {
         const savedRef = localStorage.getItem('pol_infinity_ref');
         if (savedRef && ethers.utils.isAddress(savedRef)) {
@@ -164,7 +159,7 @@ async function init() {
         });
 
         startPromoEngine();
-        startGlobalBonusCountdown(); // Initialize the new timer
+        startGlobalBonusCountdown();
 
         try {
             const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -176,10 +171,10 @@ async function init() {
             console.error("Initial account check failed:", err);
         }
 
-        window.ethereum.on('accountsChanged', (accounts) => {
+        window.ethereum.on('accountsChanged', async (accounts) => {
             if (accounts.length > 0) {
                 userAddress = accounts[0];
-                setupConnectedState();
+                await setupConnectedState();
             } else {
                 handleDisconnect();
             }
@@ -193,13 +188,13 @@ async function init() {
         leaderboardInterval = setInterval(updateLeaderboard, 300000); 
         setInterval(loadGlobalData, 30000); 
     } else {
-        Swal.fire("MetaMask Not Found", "Please install MetaMask to use this dashboard.", "warning");
+        Swal.fire("Web3 Not Found", "Please use a Web3 browser like MetaMask, Trust Wallet or TokenPocket.", "warning");
     }
 }
 
 // 2. Main Connection Toggle
 async function toggleConnection() {
-    if (!window.ethereum) return Swal.fire("Error", "MetaMask is not installed.", "error");
+    if (!window.ethereum) return Swal.fire("Error", "Wallet not detected.", "error");
 
     if (userAddress) {
         handleDisconnect();
@@ -218,7 +213,7 @@ async function toggleConnection() {
                     });
                 } catch (err) {
                     if (err.code === 4902) {
-                        Swal.fire("Network Missing", "Please add Polygon Mainnet to your MetaMask.", "error");
+                        Swal.fire("Network Missing", "Please add Polygon Mainnet to your wallet.", "error");
                     }
                     return;
                 }
@@ -230,7 +225,7 @@ async function toggleConnection() {
     }
 }
 
-// 3. UI State Management
+// 3. UI State Management - FIXED: Added IMMEDIATE DATA FETCH
 async function setupConnectedState() {
     signer = provider.getSigner();
     const normalizedContractAddr = ethers.utils.getAddress(contractAddress.toLowerCase());
@@ -242,7 +237,8 @@ async function setupConnectedState() {
         connectBtn.classList.add('connected');
     }
     
-    refreshAllData();
+    // FETCH IMMEDIATELY WITHOUT DELAY
+    await refreshAllData();
     startLiveTicker(); 
 
     if (refreshInterval) clearInterval(refreshInterval);
@@ -265,10 +261,13 @@ function handleDisconnect() {
 
 async function refreshAllData() {
     if (!userAddress) return;
-    await loadUserData();
-    await loadGlobalData();
+    // Execute both in parallel for maximum speed on mobile
+    await Promise.all([
+        loadUserData(),
+        loadGlobalData(),
+        updateUIConnected()
+    ]);
     updateTransactionHistory();
-    updateUIConnected();
 }
 
 // 4. Data Loading
@@ -294,18 +293,15 @@ async function loadGlobalData() {
         
         const realStaked = parseFloat(ethers.utils.formatEther(staked));
         const displayStaked = 1500.00 + (realStaked * 2.0);
-
         document.getElementById('totalStaked').innerText = `${displayStaked.toLocaleString(undefined, {minimumFractionDigits: 2})} POL`;
         
         const realUsersCount = users.toNumber();
-        const bonusUsers = Math.floor(realUsersCount / 5);
-        const displayUsers = 50 + realUsersCount + bonusUsers;
+        const displayUsers = 50 + realUsersCount + Math.floor(realUsersCount / 5);
         document.getElementById('totalUsers').innerText = displayUsers.toString();
-        
         document.getElementById('totalRefBonusGlobal').innerText = `${parseFloat(ethers.utils.formatEther(totalRef)).toFixed(2)} POL`;
 
         const filter = readOnly.filters.Withdrawn();
-        const events = await readOnly.queryFilter(filter, -100000);
+        const events = await readOnly.queryFilter(filter, -20000);
         let realWithdrawWei = ethers.BigNumber.from(0);
         events.forEach(e => realWithdrawWei = realWithdrawWei.add(e.args.amount));
         
@@ -328,7 +324,6 @@ async function loadUserData() {
 
         liveEarningsValue = parseFloat(ethers.utils.formatEther(available));
         document.getElementById('userAvailable').innerText = liveEarningsValue.toFixed(6);
-
         document.getElementById('userTotalStaked').innerText = `${parseFloat(ethers.utils.formatEther(totalDep)).toFixed(2)} POL`;
         document.getElementById('userWithdrawn').innerText = `${parseFloat(ethers.utils.formatEther(withdrawn)).toFixed(2)} POL`;
 
@@ -337,8 +332,9 @@ async function loadUserData() {
             if (el) el.innerText = `${parseFloat(ethers.utils.formatEther(bonus)).toFixed(2)} POL`;
         });
 
+        // Optimized Referral Fetch
         const filter = contract.filters.RefBonus(userAddress);
-        const refEvents = await contract.queryFilter(filter, -100000);
+        const refEvents = await contract.queryFilter(filter, -50000);
         const directSet = new Set();
         const teamSet = new Set();
         refEvents.forEach(e => {
@@ -365,7 +361,7 @@ async function updateTransactionHistory() {
             amount: parseFloat(ethers.utils.formatEther(e.args.amount)),
             date: e.args.start * 1000,
             hash: e.transactionHash
-        })).sort((a, b) => b.amount - a.amount);
+        })).sort((a, b) => b.date - a.date);
 
         historyBody.innerHTML = sortedEvents.map(tx => `
             <tr>
@@ -378,28 +374,21 @@ async function updateTransactionHistory() {
     } catch (e) { console.error("History Error", e); }
 }
 
-// 6. Leaderboard Calculation
+// 6. Leaderboard
 async function updateLeaderboard() {
     const lbBody = document.getElementById('leaderboardBody');
     if (!lbBody) return;
-
     try {
         const readOnly = new ethers.Contract(contractAddress, abi, provider);
         const filter = readOnly.filters.RefBonus();
-        const events = await readOnly.queryFilter(filter, -50000);
-
+        const events = await readOnly.queryFilter(filter, -30000);
         const referrerTotals = {};
         events.forEach(event => {
             const ref = event.args.referrer;
-            const amount = event.args.amount;
             if (!referrerTotals[ref]) referrerTotals[ref] = ethers.BigNumber.from(0);
-            referrerTotals[ref] = referrerTotals[ref].add(amount);
+            referrerTotals[ref] = referrerTotals[ref].add(event.args.amount);
         });
-
-        const sorted = Object.entries(referrerTotals)
-            .sort((a, b) => (b[1].gt(a[1]) ? 1 : -1))
-            .slice(0, 10);
-
+        const sorted = Object.entries(referrerTotals).sort((a, b) => (b[1].gt(a[1]) ? 1 : -1)).slice(0, 10);
         lbBody.innerHTML = sorted.map((item, index) => `
             <tr>
                 <td><span class="badge ${index < 3 ? 'bg-warning' : 'bg-secondary'}">${index + 1}</span></td>
@@ -423,20 +412,16 @@ function resetUI() {
         const el = document.getElementById(`lvl${i}Bonus`);
         if(el) el.innerText = "0 POL";
     }
-    document.getElementById('txHistoryBody').innerHTML = "<tr><td colspan='4' class='text-center text-muted'>Connect wallet to load history</td></tr>";
 }
 
 // 7. Action Listeners
 document.getElementById('connect-btn').addEventListener('click', toggleConnection);
-
-// Calculator Listener
 const calcInp = document.getElementById('calcInput');
 if(calcInp) calcInp.addEventListener('input', calculateEarnings);
 
 document.getElementById('investBtn').addEventListener('click', async () => {
     const amountInput = document.getElementById('investAmount');
     const rawAmount = amountInput ? amountInput.value : "0";
-
     if (!userAddress) return toggleConnection();
     if (parseFloat(rawAmount) < 10) return Swal.fire("Error", "Minimum 10 POL required", "warning");
 
@@ -444,60 +429,27 @@ document.getElementById('investBtn').addEventListener('click', async () => {
         const sanitizedAmount = parseFloat(rawAmount).toString();
         const amountWei = ethers.utils.parseEther(sanitizedAmount);
         const finalRef = ethers.utils.getAddress(currentReferrer.toLowerCase());
-
-        Swal.fire({ 
-            title: 'Confirm Stake', 
-            text: `Staking ${sanitizedAmount} POL...`, 
-            allowOutsideClick: false, 
-            didOpen: () => Swal.showLoading() 
-        });
-
-        // FIX: Dynamic Gas Estimation with 20% Buffer
+        Swal.fire({ title: 'Confirm Stake', text: `Staking ${sanitizedAmount} POL...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const estimatedGas = await contract.estimateGas.invest(finalRef, { value: amountWei });
-        const gasLimit = estimatedGas.mul(120).div(100);
-
-        const tx = await contract.invest(finalRef, { 
-            value: amountWei,
-            gasLimit: gasLimit
-        });
-
-        const receipt = await tx.wait();
-        
-        if (receipt.status === 1) {
-            triggerCelebration();
-            Swal.fire("Success", "Amount Staked Successfully!", "success").then(() => refreshAllData());
-        } else {
-            throw new Error("Transaction failed on chain");
-        }
-    } catch (e) { 
-        console.error("Stake Error:", e);
-        const errorReason = e.reason || (e.data ? e.data.message : e.message);
-        Swal.fire("Failed", `Transaction Error: ${errorReason}`, "error"); 
-    }
+        const tx = await contract.invest(finalRef, { value: amountWei, gasLimit: estimatedGas.mul(120).div(100) });
+        await tx.wait();
+        triggerCelebration();
+        Swal.fire("Success", "Amount Staked Successfully!", "success").then(() => refreshAllData());
+    } catch (e) { Swal.fire("Failed", e.reason || e.message, "error"); }
 });
 
 document.getElementById('withdrawBtn').addEventListener('click', async () => {
     if (!userAddress) return toggleConnection();
-    
     const available = document.getElementById('userAvailable').innerText;
     if (parseFloat(available) <= 0) return Swal.fire("Zero Balance", "You have no withdrawable dividends yet.", "info");
-
     try {
         Swal.fire({ title: 'Processing Payout...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        
-        // FIX: Dynamic Gas Estimation with 20% Buffer
         const estimatedGas = await contract.estimateGas.withdraw();
-        const gasLimit = estimatedGas.mul(120).div(100);
-
-        const tx = await contract.withdraw({ gasLimit: gasLimit });
+        const tx = await contract.withdraw({ gasLimit: estimatedGas.mul(120).div(100) });
         await tx.wait();
-        
         triggerCelebration();
-        Swal.fire("Success", "Funds Withdrawn to your wallet!", "success").then(() => refreshAllData());
-    } catch (e) { 
-        console.error("Withdraw Error:", e);
-        Swal.fire("Failed", e.reason || e.message, "error"); 
-    }
+        Swal.fire("Success", "Funds Withdrawn!", "success").then(() => refreshAllData());
+    } catch (e) { Swal.fire("Failed", e.reason || e.message, "error"); }
 });
 
 window.addEventListener('DOMContentLoaded', init);
