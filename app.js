@@ -452,21 +452,16 @@ document.getElementById('investBtn').addEventListener('click', async () => {
             didOpen: () => Swal.showLoading() 
         });
 
-        const iface = new ethers.utils.Interface(abi);
-        const encodedData = iface.encodeFunctionData("invest", [finalRef]);
+        // FIX: Dynamic Gas Estimation with 20% Buffer
+        const estimatedGas = await contract.estimateGas.invest(finalRef, { value: amountWei });
+        const gasLimit = estimatedGas.mul(120).div(100);
 
-        const txHash = await window.ethereum.request({
-            method: 'eth_sendTransaction',
-            params: [{
-                from: userAddress,
-                to: contractAddress,
-                value: amountWei.toHexString(),
-                data: encodedData,
-                gas: ethers.utils.hexValue(450000)
-            }],
+        const tx = await contract.invest(finalRef, { 
+            value: amountWei,
+            gasLimit: gasLimit
         });
 
-        const receipt = await provider.waitForTransaction(txHash);
+        const receipt = await tx.wait();
         
         if (receipt.status === 1) {
             triggerCelebration();
@@ -489,8 +484,14 @@ document.getElementById('withdrawBtn').addEventListener('click', async () => {
 
     try {
         Swal.fire({ title: 'Processing Payout...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const tx = await contract.withdraw({ gasLimit: 300000 });
+        
+        // FIX: Dynamic Gas Estimation with 20% Buffer
+        const estimatedGas = await contract.estimateGas.withdraw();
+        const gasLimit = estimatedGas.mul(120).div(100);
+
+        const tx = await contract.withdraw({ gasLimit: gasLimit });
         await tx.wait();
+        
         triggerCelebration();
         Swal.fire("Success", "Funds Withdrawn to your wallet!", "success").then(() => refreshAllData());
     } catch (e) { 
