@@ -27,7 +27,6 @@ let provider, signer, contract, userAddress;
 let refreshInterval = null;
 let leaderboardInterval = null; 
 let currentReferrer = "0x0000000000000000000000000000000000000000";
-let lastPromoTime = Date.now();
 
 // --- FOMO ADDITION: Live Ticker Variables ---
 let liveEarningsValue = 0;
@@ -85,34 +84,7 @@ function startGlobalBonusCountdown() {
     }, 1000);
 }
 
-// --- 1. PROMO ENGINE: Popups and Urgency ---
-function startPromoEngine() {
-    const addresses = ["0x71C...", "0x3A2...", "0xF51...", "0x88B...", "0xbc2...", "0x44a..."];
-    const amounts = [250, 1000, 50, 5000, 150, 300, 2500, 10];
-
-    setInterval(() => {
-        const quietTime = Date.now() - lastPromoTime;
-        if (quietTime > 40000) { 
-            const addr = addresses[Math.floor(Math.random() * addresses.length)];
-            const amt = amounts[Math.floor(Math.random() * amounts.length)];
-            const action = Math.random() > 0.3 ? "Deposited" : "Withdrew";
-            
-            Swal.fire({
-                toast: true,
-                position: 'bottom-start',
-                showConfirmButton: false,
-                timer: 4500,
-                timerProgressBar: true,
-                background: '#1a1d21',
-                color: '#fff',
-                icon: action === "Deposited" ? 'success' : 'info',
-                title: `<small style="color:#00f2ff">DAILY 5% RETURNS HIGHLIGHT</small>`,
-                html: `<b style="font-size:0.85rem">${addr} just ${action} ${amt}.00 POL</b>`
-            });
-            lastPromoTime = Date.now();
-        }
-    }, 15000);
-}
+// --- REMOVED PROMO ENGINE (POPUP NOTIFICATIONS) ---
 
 function triggerCelebration() {
     if (typeof confetti === 'function') {
@@ -147,7 +119,6 @@ async function init() {
     if (typeof window.ethereum !== 'undefined') {
         provider = new ethers.providers.Web3Provider(window.ethereum, "any");
 
-        startPromoEngine();
         startGlobalBonusCountdown();
         loadGlobalData();
         updateLeaderboard();
@@ -221,11 +192,11 @@ async function setupConnectedState() {
         connectBtn.classList.add('connected');
     }
     
-    // --- LIVE DEPOSIT LISTENER ---
+    // --- LIVE DEPOSIT LISTENER (ALERTS REMOVED) ---
     contract.on("NewDeposit", (user, plan, percent, amount) => {
-        loadGlobalData(); // Refresh metrics for everyone
-        if (user.toLowerCase() === userAddress.toLowerCase()) {
-            refreshAllData(); // Refresh specific user dashboard
+        loadGlobalData(); 
+        if (userAddress && user.toLowerCase() === userAddress.toLowerCase()) {
+            refreshAllData(); 
             triggerCelebration();
         }
     });
@@ -284,28 +255,21 @@ async function loadGlobalData() {
             readOnly.totalRefBonus()
         ]);
         
-        // STAKED: REAL NUMBERS
         const realStaked = parseFloat(ethers.utils.formatEther(staked));
         const stakedEl = document.getElementById('totalStaked');
         if(stakedEl) stakedEl.innerText = `${realStaked.toLocaleString(undefined, {minimumFractionDigits: 2})} POL`;
         
-        // USERS: REAL NUMBERS
         const totalUsersEl = document.getElementById('totalUsers');
         if(totalUsersEl) totalUsersEl.innerText = users.toString();
         
-        // REF BONUS: REAL NUMBERS
         const globalRefEl = document.getElementById('totalRefBonusGlobal');
         if(globalRefEl) globalRefEl.innerText = `${parseFloat(ethers.utils.formatEther(totalRef)).toFixed(2)} POL`;
 
-        // FIXED PLATFORM WITHDRAWS CALCULATION:
-        // Total Withdrawn = (Total Staked) - (Current Balance in Contract)
         const contractBalance = await provider.getBalance(contractAddress);
         const platWithdrawnEl = document.getElementById('totalPlatformWithdrawn');
         if(platWithdrawnEl) {
              const currentBalanceNum = parseFloat(ethers.utils.formatEther(contractBalance));
              const totalWithdrawnNum = realStaked - currentBalanceNum;
-             
-             // Ensure we don't show negative numbers due to RPC lag
              const displayValue = totalWithdrawnNum > 0 ? totalWithdrawnNum : 0;
              platWithdrawnEl.innerText = `${displayValue.toLocaleString(undefined, {minimumFractionDigits: 3})} POL`;
         }
