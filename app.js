@@ -1,23 +1,25 @@
 /** * POL INFINITY Dashboard Logic
  * Native Ethers.js v5.7.2 + MetaMask
- * OPTIMIZED FOR HIGH-SPEED MOBILE dAPP BROWSERS
+ * OPTIMIZED FOR HIGH-SPEED MOBILE dAPP BRWSERS
  */
 
 // We use lower-case here to avoid checksum issues during init
 const contractAddress = "0xcF0e9664B10F8483E883B7B99e27ef8f4Ff20682".toLowerCase();
 const abi = [
-    "function invest(address referrer) public payable",
-    "function withdraw() public",
-    "function totalStaked() public view returns (uint256)",
-    "function totalUsers() public view returns (uint256)",
-    "function totalRefBonus() public view returns (uint256)",
-    "function getUserAvailable(address userAddress) public view returns (uint256)",
-    "function getUserTotalDeposits(address userAddress) public view returns (uint256)",
-    "function getUserTotalWithdrawn(address userAddress) public view returns (uint256)",
-    "function getUserReferralTotalBonus(address userAddress) public view returns (uint256[4])",
-    "event NewDeposit(address indexed user, uint8 plan, uint256 percent, uint256 amount, uint256 profit, uint256 start, uint256 finish)",
-    "event Withdrawn(address indexed user, uint256 amount)",
-    "event RefBonus(address indexed referrer, address indexed referral, uint256 indexed level, uint256 amount)"
+    {"inputs":[{"internalType":"address","name":"referrer","type":"address"}],"name":"invest","outputs":[],"stateMutability":"payable","type":"function"},
+    {"inputs":[],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[],"name":"totalStaked","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"totalUsers","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"totalRefBonus","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"getContractInfo","outputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"userAddress","type":"address"}],"name":"getUserAvailable","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"userAddress","type":"address"}],"name":"getUserTotalDeposits","outputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"userAddress","type":"address"}],"name":"getUserTotalWithdrawn","outputs":[{"internalType":"uint256","name":"amount","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"userAddress","type":"address"}],"name":"getUserReferralTotalBonus","outputs":[{"internalType":"uint256[4]","name":"","type":"uint256[4]"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"userAddress","type":"address"}],"name":"getUserDownlineCount","outputs":[{"internalType":"uint256[4]","name":"","type":"uint256[4]"}],"stateMutability":"view","type":"function"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint8","name":"plan","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"percent","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"profit","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"start","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"finish","type":"uint256"}],"name":"NewDeposit","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"Withdrawn","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"referrer","type":"address"},{"indexed":true,"internalType":"address","name":"referral","type":"address"},{"indexed":true,"internalType":"uint256","name":"level","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"RefBonus","type":"event"}
 ];
 
 // State variables
@@ -38,7 +40,6 @@ function calculateEarnings() {
     
     const amount = parseFloat(input.value) || 0;
     
-    // Logic: 5% Daily Return
     const daily = amount * 0.05;
     const weekly = daily * 7;
     const monthly = daily * 30;
@@ -59,7 +60,6 @@ function startLiveTicker() {
     if (tickerInterval) clearInterval(tickerInterval);
     tickerInterval = setInterval(() => {
         if (liveEarningsValue > 0) {
-            // 5% daily = 0.00005787% per second
             const increment = liveEarningsValue * (0.05 / 86400); 
             liveEarningsValue += increment;
             const el = document.getElementById('userAvailable');
@@ -73,7 +73,7 @@ function startGlobalBonusCountdown() {
     setInterval(() => {
         const now = new Date();
         const nextCycle = new Date();
-        nextCycle.setUTCHours(24, 0, 0, 0); // Resets at UTC midnight
+        nextCycle.setUTCHours(24, 0, 0, 0); 
         
         const diff = nextCycle - now;
         const h = Math.floor(diff / 3600000);
@@ -125,7 +125,6 @@ function triggerCelebration() {
     }
 }
 
-// 1. App Initialization
 async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const ref = urlParams.get('ref');
@@ -148,9 +147,6 @@ async function init() {
     if (typeof window.ethereum !== 'undefined') {
         provider = new ethers.providers.Web3Provider(window.ethereum, "any");
 
-        const publicContract = new ethers.Contract(contractAddress, abi, provider);
-        
-        // Background loading
         startPromoEngine();
         startGlobalBonusCountdown();
         loadGlobalData();
@@ -176,17 +172,14 @@ async function init() {
         });
 
         window.ethereum.on('chainChanged', () => window.location.reload());
-
         leaderboardInterval = setInterval(updateLeaderboard, 300000); 
         setInterval(loadGlobalData, 30000); 
     } else {
-        // Fallback for non-web3
         loadGlobalData();
         Swal.fire("Web3 Not Found", "Please use a Web3 browser like MetaMask, Trust Wallet or TokenPocket.", "warning");
     }
 }
 
-// 2. Main Connection Toggle
 async function toggleConnection() {
     if (!window.ethereum) return Swal.fire("Error", "Wallet not detected.", "error");
 
@@ -213,13 +206,10 @@ async function toggleConnection() {
                 }
             }
             await setupConnectedState();
-        } catch (e) {
-            console.error("Connection rejected");
-        }
+        } catch (e) { console.error("Connection rejected"); }
     }
 }
 
-// 3. UI State Management - SPEED OPTIMIZED
 async function setupConnectedState() {
     signer = provider.getSigner();
     const normalizedContractAddr = ethers.utils.getAddress(contractAddress.toLowerCase());
@@ -231,7 +221,15 @@ async function setupConnectedState() {
         connectBtn.classList.add('connected');
     }
     
-    // IMMEDIATE PARALLEL FETCH
+    // --- LIVE DEPOSIT LISTENER ---
+    contract.on("NewDeposit", (user, plan, percent, amount) => {
+        loadGlobalData(); // Refresh metrics for everyone
+        if (user.toLowerCase() === userAddress.toLowerCase()) {
+            refreshAllData(); // Refresh specific user dashboard
+            triggerCelebration();
+        }
+    });
+
     refreshAllData();
     startLiveTicker(); 
 
@@ -255,7 +253,6 @@ function handleDisconnect() {
 
 async function refreshAllData() {
     if (!userAddress) return;
-    // Speed optimization: Group all requests into one promise
     try {
         await Promise.all([
             loadUserData(),
@@ -269,7 +266,8 @@ async function refreshAllData() {
 async function updateUIConnected() {
     try {
         const balance = await provider.getBalance(userAddress);
-        document.getElementById('walletBalance').innerText = `${parseFloat(ethers.utils.formatEther(balance)).toFixed(4)} POL`;
+        const balEl = document.getElementById('walletBalance');
+        if (balEl) balEl.innerText = `${parseFloat(ethers.utils.formatEther(balance)).toFixed(4)} POL`;
         
         const refLink = `${window.location.origin}${window.location.pathname}?ref=${userAddress}`;
         const refContainer = document.getElementById('refLink');
@@ -286,24 +284,31 @@ async function loadGlobalData() {
             readOnly.totalRefBonus()
         ]);
         
+        // STAKED: REAL NUMBERS
         const realStaked = parseFloat(ethers.utils.formatEther(staked));
-        const displayStaked = 1500.00 + (realStaked * 2.0);
-        document.getElementById('totalStaked').innerText = `${displayStaked.toLocaleString(undefined, {minimumFractionDigits: 2})} POL`;
+        const stakedEl = document.getElementById('totalStaked');
+        if(stakedEl) stakedEl.innerText = `${realStaked.toLocaleString(undefined, {minimumFractionDigits: 2})} POL`;
         
-        const realUsersCount = users.toNumber();
-        const displayUsers = 50 + realUsersCount + Math.floor(realUsersCount / 5);
-        document.getElementById('totalUsers').innerText = displayUsers.toString();
-        document.getElementById('totalRefBonusGlobal').innerText = `${parseFloat(ethers.utils.formatEther(totalRef)).toFixed(2)} POL`;
+        // USERS: REAL NUMBERS
+        const totalUsersEl = document.getElementById('totalUsers');
+        if(totalUsersEl) totalUsersEl.innerText = users.toString();
+        
+        // REF BONUS: REAL NUMBERS
+        const globalRefEl = document.getElementById('totalRefBonusGlobal');
+        if(globalRefEl) globalRefEl.innerText = `${parseFloat(ethers.utils.formatEther(totalRef)).toFixed(2)} POL`;
 
-        // Withdrawal calculation - Faster Query
-        const filter = readOnly.filters.Withdrawn();
-        const events = await readOnly.queryFilter(filter, -10000); // reduced range for mobile speed
-        let realWithdrawWei = ethers.BigNumber.from(0);
-        events.forEach(e => realWithdrawWei = realWithdrawWei.add(e.args.amount));
-        
-        const realWithdrawValue = parseFloat(ethers.utils.formatEther(realWithdrawWei));
-        const displayWithdraw = 500.00 + (realWithdrawValue * 1.5);
-        document.getElementById('totalPlatformWithdrawn').innerText = `${displayWithdraw.toLocaleString(undefined, {minimumFractionDigits: 2})} POL`;
+        // FIXED PLATFORM WITHDRAWS CALCULATION:
+        // Total Withdrawn = (Total Staked) - (Current Balance in Contract)
+        const contractBalance = await provider.getBalance(contractAddress);
+        const platWithdrawnEl = document.getElementById('totalPlatformWithdrawn');
+        if(platWithdrawnEl) {
+             const currentBalanceNum = parseFloat(ethers.utils.formatEther(contractBalance));
+             const totalWithdrawnNum = realStaked - currentBalanceNum;
+             
+             // Ensure we don't show negative numbers due to RPC lag
+             const displayValue = totalWithdrawnNum > 0 ? totalWithdrawnNum : 0;
+             platWithdrawnEl.innerText = `${displayValue.toLocaleString(undefined, {minimumFractionDigits: 3})} POL`;
+        }
 
     } catch (e) { console.error("Global Data Error", e); }
 }
@@ -311,35 +316,37 @@ async function loadGlobalData() {
 async function loadUserData() {
     if (!contract || !userAddress) return;
     try {
-        const [available, totalDep, withdrawn, refBonuses] = await Promise.all([
+        const [available, totalDep, withdrawn, refBonuses, downlineCount] = await Promise.all([
             contract.getUserAvailable(userAddress),
             contract.getUserTotalDeposits(userAddress),
             contract.getUserTotalWithdrawn(userAddress),
-            contract.getUserReferralTotalBonus(userAddress)
+            contract.getUserReferralTotalBonus(userAddress),
+            contract.getUserDownlineCount(userAddress)
         ]);
 
         liveEarningsValue = parseFloat(ethers.utils.formatEther(available));
-        document.getElementById('userAvailable').innerText = liveEarningsValue.toFixed(6);
-        document.getElementById('userTotalStaked').innerText = `${parseFloat(ethers.utils.formatEther(totalDep)).toFixed(2)} POL`;
-        document.getElementById('userWithdrawn').innerText = `${parseFloat(ethers.utils.formatEther(withdrawn)).toFixed(2)} POL`;
+        const availEl = document.getElementById('userAvailable');
+        if(availEl) availEl.innerText = liveEarningsValue.toFixed(6);
+        
+        const userStakedEl = document.getElementById('userTotalStaked');
+        if(userStakedEl) userStakedEl.innerText = `${parseFloat(ethers.utils.formatEther(totalDep)).toFixed(2)} POL`;
+        
+        const withdrawnEl = document.getElementById('userWithdrawn');
+        if(withdrawnEl) withdrawnEl.innerText = `${parseFloat(ethers.utils.formatEther(withdrawn)).toFixed(2)} POL`;
 
         refBonuses.forEach((bonus, i) => {
             const el = document.getElementById(`lvl${i + 1}Bonus`);
             if (el) el.innerText = `${parseFloat(ethers.utils.formatEther(bonus)).toFixed(2)} POL`;
         });
 
-        // HIGH SPEED REFERRAL COUNT FIX
-        const filter = contract.filters.RefBonus(userAddress);
-        const refEvents = await contract.queryFilter(filter, -25000); // Optimized for mobile
-        const directSet = new Set();
-        const teamSet = new Set();
-        refEvents.forEach(e => {
-            const referral = e.args.referral.toLowerCase();
-            teamSet.add(referral);
-            if(e.args.level.toNumber() === 0) directSet.add(referral);
-        });
-        document.getElementById('directReferrals').innerText = directSet.size;
-        document.getElementById('totalTeam').innerText = teamSet.size;
+        const directEl = document.getElementById('directReferrals');
+        if(directEl) directEl.innerText = downlineCount[0].toNumber();
+        
+        const totalTeamEl = document.getElementById('totalTeam');
+        if(totalTeamEl) {
+            const teamTotal = downlineCount.reduce((a, b) => a + b.toNumber(), 0);
+            totalTeamEl.innerText = teamTotal;
+        }
 
     } catch (e) { console.error("User Data Error", e); }
 }
@@ -350,7 +357,7 @@ async function updateTransactionHistory() {
 
     try {
         const depFilter = contract.filters.NewDeposit(userAddress);
-        const events = await contract.queryFilter(depFilter, -10000);
+        const events = await contract.queryFilter(depFilter, -5000);
         
         let sortedEvents = events.map(e => ({
             amount: parseFloat(ethers.utils.formatEther(e.args.amount)),
@@ -358,7 +365,7 @@ async function updateTransactionHistory() {
             hash: e.transactionHash
         })).sort((a, b) => b.date - a.date);
 
-        historyBody.innerHTML = sortedEvents.map(tx => `
+        historyBody.innerHTML = sortedEvents.slice(0, 10).map(tx => `
             <tr>
                 <td><span class="badge bg-success bg-opacity-10 text-success">Deposit</span></td>
                 <td class="fw-bold text-white">${tx.amount.toFixed(2)} POL</td>
@@ -375,7 +382,7 @@ async function updateLeaderboard() {
     try {
         const readOnly = new ethers.Contract(contractAddress, abi, provider);
         const filter = readOnly.filters.RefBonus();
-        const events = await readOnly.queryFilter(filter, -15000);
+        const events = await readOnly.queryFilter(filter, -10000);
         const referrerTotals = {};
         events.forEach(event => {
             const ref = event.args.referrer;
@@ -394,18 +401,13 @@ async function updateLeaderboard() {
 }
 
 function resetUI() {
-    document.getElementById('walletBalance').innerText = "-- POL";
+    const ids = ['walletBalance', 'userAvailable', 'userTotalStaked', 'userWithdrawn', 'directReferrals', 'totalTeam'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.innerText = id === 'userAvailable' ? "0.000000" : "0.00";
+    });
     const refLink = document.getElementById('refLink');
     if (refLink) refLink.innerText = "Connect wallet to view...";
-    document.getElementById('userAvailable').innerText = "0.000000";
-    document.getElementById('userTotalStaked').innerText = "0.00";
-    document.getElementById('userWithdrawn').innerText = "0.00";
-    document.getElementById('directReferrals').innerText = "0";
-    document.getElementById('totalTeam').innerText = "0";
-    for(let i=1; i<=4; i++) {
-        const el = document.getElementById(`lvl${i}Bonus`);
-        if(el) el.innerText = "0.00 POL";
-    }
 }
 
 document.getElementById('connect-btn').addEventListener('click', toggleConnection);
@@ -419,10 +421,9 @@ document.getElementById('investBtn').addEventListener('click', async () => {
     if (parseFloat(rawAmount) < 10) return Swal.fire("Error", "Minimum 10 POL required", "warning");
 
     try {
-        const sanitizedAmount = parseFloat(rawAmount).toString();
-        const amountWei = ethers.utils.parseEther(sanitizedAmount);
+        const amountWei = ethers.utils.parseEther(parseFloat(rawAmount).toString());
         const finalRef = ethers.utils.getAddress(currentReferrer.toLowerCase());
-        Swal.fire({ title: 'Confirm Stake', text: `Staking ${sanitizedAmount} POL...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: 'Confirm Stake', text: `Staking ${rawAmount} POL...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         const tx = await contract.invest(finalRef, { value: amountWei });
         await tx.wait();
         triggerCelebration();
