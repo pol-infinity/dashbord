@@ -233,6 +233,11 @@
                 DAILY <span class="text-info">5% RETURNS</span>
             </div>
             <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
+            <div class="status-pill text-warning">
+                <i class="fa-solid fa-clock"></i>
+                NEXT CYCLE: <span id="globalCycleTimer">--:--:--</span>
+            </div>
+            <div style="width: 1px; height: 15px; background: rgba(255,255,255,0.1);"></div>
             <div class="status-pill text-success">
                 <i class="fa-solid fa-circle-check" style="font-size: 0.6rem;"></i>
                 ACTIVE
@@ -247,6 +252,53 @@
             <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Team Count</p><div id="totalTeam" class="card-value">0</div></div></div>
         </div>
 
+        <div class="row g-3 mb-4">
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <div class="glass-card">
+                            <h6 class="mb-3 fw-bold small">STAKE ASSETS</h6>
+                            <div class="upline-display">
+                                <span class="text-secondary">Upliner:</span>
+                                <span id="uplineAddressDisplay" class="text-info fw-bold">None</span>
+                            </div>
+                            <p class="text-secondary mb-2" style="font-size: 0.7rem;">Min: 10 POL | Max: Unlimited</p>
+                            <input type="number" id="investAmount" class="form-control bg-dark border-secondary text-white mb-3" placeholder="Amount">
+                            <button id="investBtn" class="btn btn-action">STAKE</button>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="glass-card fomo-pulse">
+                            <h6 class="mb-3 fw-bold small d-flex justify-content-between">
+                                WITHDRAWABLE 
+                                <span class="badge bg-success" style="font-size: 0.5rem;">HOLD BONUS +1%</span>
+                            </h6>
+                            <div id="userAvailable" class="card-value earning-ticker mb-3">0.000000</div>
+                            <button id="withdrawBtn" class="btn btn-action" style="background: linear-gradient(90deg, #11998e, #38ef7d);">WITHDRAW</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <h6 class="mb-3 card-label text-secondary">Rewards</h6>
+                <div class="glass-card">
+                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1">L1</span> 6%</span><span id="lvl1Bonus">0 POL</span></div>
+                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#9d50bb">L2</span> 3%</span><span id="lvl2Bonus">0 POL</span></div>
+                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#6a11cb">L3</span> 1%</span><span id="lvl3Bonus">0 POL</span></div>
+                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#4a00e0">L4</span> 1%</span><span id="lvl4Bonus">0 POL</span></div>
+                    
+                    <div class="p-2 mt-2 rounded bg-dark bg-opacity-50 border border-secondary border-opacity-20">
+                        <p class="card-label mb-1" style="font-size: 0.5rem;">Referral Link</p>
+                        <div class="d-flex align-items-center justify-content-between">
+                             <div id="refLink" class="small text-secondary">Connect wallet...</div>
+                             <i class="fa-solid fa-copy" style="cursor:pointer; color: var(--accent-pol);" onclick="copyRef()"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <h6 class="mb-3 card-label text-warning">Profit Calculator</h6>
         <div class="row mb-4">
             <div class="col-12">
@@ -254,7 +306,7 @@
                     <div class="row align-items-center">
                         <div class="col-md-4">
                             <label class="card-label">Enter Amount (POL)</label>
-                            <input type="number" id="calcInput" class="form-control bg-dark border-secondary text-white mb-3" placeholder="Ex: 1000" oninput="calculateEarnings()">
+                            <input type="number" id="calcInput" class="form-control bg-dark border-secondary text-white mb-3" placeholder="Ex: 1000">
                             <p class="small text-secondary" style="font-size: 0.65rem;">Calculated based on 5% Daily Return Plan</p>
                         </div>
                         <div class="col-md-8">
@@ -298,55 +350,6 @@
             <div class="col-6 col-md-3"><div class="glass-card text-center"><p class="card-label">Platform Withdraws</p><div id="totalPlatformWithdrawn" class="card-value">---</div></div></div>
         </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-lg-8">
-                <div class="row g-3">
-                    <div class="col-12 col-md-6">
-                        <div class="glass-card">
-                            <h6 class="mb-3 fw-bold small">STAKE ASSETS</h6>
-                            
-                            <div class="upline-display">
-                                <span class="text-secondary">Upliner:</span>
-                                <span id="uplineAddressDisplay" class="text-info fw-bold">None</span>
-                            </div>
-
-                            <p class="text-secondary mb-2" style="font-size: 0.7rem;">Min: 10 POL | Max: Unlimited</p>
-                            <input type="number" id="investAmount" class="form-control bg-dark border-secondary text-white mb-3" placeholder="Amount">
-                            <button id="investBtn" class="btn btn-action">STAKE</button>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6">
-                        <div class="glass-card fomo-pulse">
-                            <h6 class="mb-3 fw-bold small d-flex justify-content-between">
-                                WITHDRAWABLE 
-                                <span class="badge bg-success" style="font-size: 0.5rem;">HOLD BONUS +1%</span>
-                            </h6>
-                            <div id="userAvailable" class="card-value earning-ticker mb-3">0.000000</div>
-                            <button id="withdrawBtn" class="btn btn-action" style="background: linear-gradient(90deg, #11998e, #38ef7d);">WITHDRAW</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <h6 class="mb-3 card-label text-secondary">Rewards</h6>
-                <div class="glass-card">
-                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1">L1</span> 6%</span><span id="lvl1Bonus">0 POL</span></div>
-                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#9d50bb">L2</span> 3%</span><span id="lvl2Bonus">0 POL</span></div>
-                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#6a11cb">L3</span> 1%</span><span id="lvl3Bonus">0 POL</span></div>
-                    <div class="level-row d-flex justify-content-between"><span><span class="level-badge me-1" style="background:#4a00e0">L4</span> 1%</span><span id="lvl4Bonus">0 POL</span></div>
-                    
-                    <div class="p-2 mt-2 rounded bg-dark bg-opacity-50 border border-secondary border-opacity-20">
-                        <p class="card-label mb-1" style="font-size: 0.5rem;">Referral Link</p>
-                        <div class="d-flex align-items-center justify-content-between">
-                             <div id="refLink" class="small text-secondary">Connect wallet...</div>
-                             <i class="fa-solid fa-copy" style="cursor:pointer; color: var(--accent-pol);" onclick="copyRef()"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row g-3">
             <div class="col-12">
                 <div class="glass-card">
@@ -376,49 +379,6 @@
     <script src="app.js"></script>
     
     <script>
-        function calculateEarnings() {
-            const input = document.getElementById('calcInput');
-            const amount = parseFloat(input.value) || 0;
-            const daily = amount * 0.05;
-            const weekly = daily * 7;
-            const monthly = daily * 30;
-            const yearly = daily * 365;
-            document.getElementById('resDaily').innerText = daily.toFixed(2) + " POL";
-            document.getElementById('resWeekly').innerText = weekly.toFixed(2) + " POL";
-            document.getElementById('resMonthly').innerText = monthly.toFixed(2) + " POL";
-            document.getElementById('resYearly').innerText = yearly.toFixed(2) + " POL";
-        }
-
-        function detectReferral() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const ref = urlParams.get('ref');
-            const display = document.getElementById('uplineAddressDisplay');
-            if (ref && ethers.utils.isAddress(ref)) {
-                const shortened = ref.slice(0, 6) + "..." + ref.slice(-4);
-                display.innerText = shortened;
-                localStorage.setItem('pol_infinity_ref', ref);
-            } else {
-                const savedRef = localStorage.getItem('pol_infinity_ref');
-                if (savedRef) {
-                    display.innerText = savedRef.slice(0, 6) + "..." + savedRef.slice(-4);
-                } else {
-                    display.innerText = "Default (Admin)";
-                }
-            }
-        }
-        detectReferral();
-
-        function triggerConfetti() {
-            if (typeof confetti === 'function') {
-                confetti({ 
-                    particleCount: 100, 
-                    spread: 60, 
-                    origin: { y: 0.7 }, 
-                    colors: ['#7B3FE4', '#9d50bb', '#00f2ff'] 
-                });
-            }
-        }
-
         function copyRef() {
             const link = document.getElementById("refLink").innerText;
             if(link.includes("Connect")) {
